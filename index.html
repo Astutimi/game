@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Rift - Multiplayer Quantum Adventure</title>
+    <style>
+        :root {
+            --quantum-blue: #00f7ff;
+            --quantum-purple: #b300ff;
+            --quantum-pink: #ff00b7;
+            --dark-space: #0a0a20;
+            --neon-glow: 0 0 10px var(--quantum-blue), 0 0 20px var(--quantum-purple);
+            --text-glow: 0 0 5px #fff, 0 0 10px var(--quantum-blue);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--dark-space);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        @font-face {
+            font-family: 'Orbitron';
+            src: url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(ellipse at center, #0a0a30 0%, #000010 100%);
+            z-index: 1000;
+        }
+
+        .quantum-loader {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 30px;
+        }
+
+        .quantum-dot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--quantum-blue);
+            border-radius: 50%;
+            transform: rotate(calc(var(--i) * 72deg)) translateY(-80px);
+            animation: quantum-pulse 2s infinite ease-in-out calc(var(--i) * 0.2s);
+            box-shadow: 0 0 15px var(--quantum-blue), 0 0 30px var(--quantum-purple);
+        }
+
+        @keyframes quantum-pulse {
+            0%, 100% { transform: rotate(calc(var(--i) * 72deg)) translateY(-80px) scale(1); }
+            50% { transform: rotate(calc(var(--i) * 72deg)) translateY(-100px) scale(1.5); }
+        }
+
+        #loading-screen h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-shadow: var(--text-glow);
+            letter-spacing: 3px;
+            animation: text-pulse 3s infinite;
+        }
+
+        @keyframes text-pulse {
+            0%, 100% { opacity: 0.8; text-shadow: 0 0 5px #fff, 0 0 10px var(--quantum-blue); }
+            50% { opacity: 1; text-shadow: 0 0 10px #fff, 0 0 20px var(--quantum-blue), 0 0 30px var(--quantum-purple); }
+        }
+
+        #login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1001;
+        }
+
+        .quantum-panel {
+            background: linear-gradient(145deg, #0f0f2a, #1a1a3a);
+            border: 1px solid var(--quantum-blue);
+            border-radius: 10px;
+            padding: 30px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: var(--neon-glow), inset 0 0 20px rgba(0, 247, 255, 0.2);
+            animation: panel-float 6s infinite ease-in-out;
+        }
+
+        @keyframes panel-float {
+            0%, 100% { transform: translateY(0) rotate(0.5deg); }
+            50% { transform: translateY(-10px) rotate(-0.5deg); }
+        }
+
+        .input-field {
+            position: relative;
+            margin: 30px 0;
+        }
+
+        .input-field input {
+            width: 100%;
+            padding: 10px 0;
+            font-size: 16px;
+            color: white;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--quantum-blue);
+            outline: none;
+        }
+
+        .input-field label {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+            transition: 0.5s;
+        }
+
+        .input-field input:focus ~ label,
+        .input-field input:valid ~ label {
+            top: -20px;
+            left: 0;
+            color: var(--quantum-blue);
+            font-size: 14px;
+            text-shadow: var(--text-glow);
+        }
+
+        .underline {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--quantum-blue), var(--quantum-purple));
+            transition: 0.5s;
+        }
+
+        .input-field input:focus ~ .underline,
+        .input-field input:valid ~ .underline {
+            width: 100%;
+        }
+
+        .quantum-btn {
+            background: linear-gradient(45deg, var(--quantum-blue), var(--quantum-purple));
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 15px rgba(0, 247, 255, 0.5);
+            width: 100%;
+        }
+
+        .quantum-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 25px rgba(0, 247, 255, 0.8);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            display: none;
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #player-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(10, 10, 30, 0.7);
+            border: 1px solid var(--quantum-blue);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: var(--neon-glow);
+            display: flex;
+            gap: 20px;
+        }
+
+        .hud-element {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .hud-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            color: var(--quantum-blue);
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .energy-bar {
+            width: 200px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .energy-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--quantum-blue), var(--quantum-purple));
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
+
+        .particle-count {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            color: white;
+            text-shadow: var(--text-glow);
+        }
+
+        #players-online {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            background: rgba(10, 10, 30, 0.7);
+            border: 1px solid var(--quantum-blue);
+            border-radius: 10px;
+            padding: 10px 15px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: var(--quantum-blue);
+            box-shadow: var(--neon-glow);
+        }
+
+        #chat-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 300px;
+            z-index: 10;
+            background: rgba(10, 10, 30, 0.7);
+            border: 1px solid var(--quantum-blue);
+            border-radius: 10px;
+            box-shadow: var(--neon-glow);
+            overflow: hidden;
+        }
+
+        #chat-messages {
+            height: 150px;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        #chat-input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-top: 1px solid var(--quantum-blue);
+            color: white;
+            outline: none;
+        }
+
+        #quantum-effects {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .quantum-particle {
+            position: absolute;
+            width: var(--size);
+            height: var(--size);
+            background: white;
+            border-radius: 50%;
+            top: var(--y);
+            left: var(--x);
+            opacity: 0.7;
+            animation: particle-float 10s infinite ease-in-out var(--delay);
+            filter: blur(0.5px);
+        }
+
+        @keyframes particle-float {
+            0%, 100% { transform: translate(0, 0); opacity: 0.3; }
+            25% { transform: translate(10px, -20px); opacity: 0.7; }
+            50% { transform: translate(-15px, 10px); opacity: 0.5; }
+            75% { transform: translate(5px, 15px); opacity: 0.8; }
+        }
+
+        /* Simple canvas styles for the demo */
+        #demo-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #1a1a3a 0%, #0a0a20 100%);
+        }
+
+        .demo-player {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: var(--quantum-blue);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--quantum-blue);
+        }
+
+        .demo-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--quantum-pink);
+            border-radius: 50%;
+            box-shadow: 0 0 5px var(--quantum-pink);
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="quantum-loader">
+            <div class="quantum-dot" style="--i:1"></div>
+            <div class="quantum-dot" style="--i:2"></div>
+            <div class="quantum-dot" style="--i:3"></div>
+            <div class="quantum-dot" style="--i:4"></div>
+            <div class="quantum-dot" style="--i:5"></div>
+        </div>
+        <h1>ENTERING QUANTUM RIFT</h1>
+        <p>Initializing quantum entanglement...</p>
+    </div>
+
+    <div id="login-modal" class="modal">
+        <div class="quantum-panel">
+            <h2>Quantum Access</h2>
+            <form id="login-form">
+                <div class="input-field">
+                    <input type="text" id="username" required>
+                    <label>Quantum Signature</label>
+                    <div class="underline"></div>
+                </div>
+                <button type="submit" class="quantum-btn">ENTANGLE</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="player-hud">
+            <div class="hud-element">
+                <span class="hud-label">QUANTUM ENERGY</span>
+                <div class="energy-bar">
+                    <div class="energy-fill" id="energy-fill"></div>
+                </div>
+            </div>
+            <div class="hud-element">
+                <span class="hud-label">PARTICLES</span>
+                <div class="particle-count" id="particle-count">0</div>
+            </div>
+        </div>
+        
+        <div id="players-online">
+            <span>ENTANGLED PLAYERS: </span>
+            <span id="online-count">0</span>
+        </div>
+        
+        <canvas id="demo-canvas"></canvas>
+        
+        <div id="chat-container">
+            <div id="chat-messages"></div>
+            <input type="text" id="chat-input" placeholder="Transmit quantum message...">
+        </div>
+    </div>
+
+    <div id="quantum-effects">
+        <!-- Particles will be added by JS -->
+    </div>
+
+    <script>
+        // Game Variables
+        let socket;
+        let playerName = '';
+        let playerEnergy = 100;
+        let collectedParticles = 0;
+        let isGravityReversed = false;
+        let playerX = 400;
+        let playerY = 300;
+        let otherPlayers = {};
+        let particles = [];
+        let keys = {};
+
+        // Initialize the game
+        window.onload = function() {
+            createQuantumEffects();
+            
+            // Simulate loading
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('login-modal').style.display = 'flex';
+            }, 3000);
+            
+            // Handle login
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                playerName = document.getElementById('username').value.trim();
+                
+                if (playerName) {
+                    document.getElementById('login-modal').style.display = 'none';
+                    initializeGame();
+                }
+            });
+
+            // Keyboard controls
+            window.addEventListener('keydown', function(e) {
+                keys[e.key] = true;
+                
+                // Space for special ability
+                if (e.key === ' ' && playerEnergy >= 30) {
+                    isGravityReversed = !isGravityReversed;
+                    playerEnergy -= 30;
+                    document.getElementById('energy-fill').style.width = `${playerEnergy}%`;
+                    
+                    // Visual effect
+                    const energyFill = document.getElementById('energy-fill');
+                    energyFill.style.background = 'linear-gradient(90deg, var(--quantum-pink), #ff0000)';
+                    setTimeout(() => {
+                        energyFill.style.background = 'linear-gradient(90deg, var(--quantum-blue), var(--quantum-purple))';
+                    }, 300);
+                }
+            });
+
+            window.addEventListener('keyup', function(e) {
+                keys[e.key] = false;
+            });
+        };
+
+        function createQuantumEffects() {
+            const effectsContainer = document.getElementById('quantum-effects');
+            
+            // Create floating particles
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'quantum-particle';
+                particle.style.setProperty('--x', `${Math.random() * 100}%`);
+                particle.style.setProperty('--y', `${Math.random() * 100}%`);
+                particle.style.setProperty('--size', `${Math.random() * 3 + 1}px`);
+                particle.style.setProperty('--delay', `${Math.random() * 5}s`);
+                
+                // Random color
+                const colors = ['var(--quantum-blue)', 'var(--quantum-purple)', 'var(--quantum-pink)'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.backgroundColor = randomColor;
+                
+                effectsContainer.appendChild(particle);
+            }
+        }
+
+        function initializeGame() {
+            document.getElementById('game-container').style.display = 'block';
+            
+            // Create demo player
+            const player = document.createElement('div');
+            player.className = 'demo-player';
+            player.id = 'player';
+            player.style.left = `${playerX}px`;
+            player.style.top = `${playerY}px`;
+            document.getElementById('demo-canvas').appendChild(player);
+            
+            // Create demo particles
+            for (let i = 0; i < 20; i++) {
+                createParticle(
+                    Math.random() * window.innerWidth,
+                    Math.random() * window.innerHeight
+                );
+            }
+            
+            // Start game loop
+            gameLoop();
+        }
+
+        function createParticle(x, y) {
+            const particle = document.createElement('div');
+            particle.className = 'demo-particle';
+            particle.style.left = `${x}px`;
+            particle.style.top = `${y}px`;
+            particle.dataset.x = x;
+            particle.dataset.y = y;
+            document.getElementById('demo-canvas').appendChild(particle);
+            particles.push(particle);
+        }
+
+        function gameLoop() {
+            // Player movement
+            const speed = 5;
+            let dx = 0;
+            let dy = 0;
+            
+            if (keys['ArrowLeft'] || keys['a']) dx -= speed;
+            if (keys['ArrowRight'] || keys['d']) dx += speed;
+            if (keys['ArrowUp'] || keys['w']) dy -= speed;
+            if (keys['ArrowDown'] || keys['s']) dy += speed;
+            
+            // Apply gravity effect
+            if (isGravityReversed) {
+                dy -= 1;
+            } else {
+                dy += 1;
+            }
+            
+            // Update player position
+            playerX = Math.max(0, Math.min(window.innerWidth - 30, playerX + dx));
+            playerY = Math.max(0, Math.min(window.innerHeight - 30, playerY + dy));
+            
+            document.getElementById('player').style.left = `${playerX}px`;
+            document.getElementById('player').style.top = `${playerY}px`;
+            
+            // Check for particle collection
+            particles.forEach((particle, index) => {
+                const px = parseFloat(particle.dataset.x) + 5;
+                const py = parseFloat(particle.dataset.y) + 5;
+                
+                if (
+                    Math.abs(px - (playerX + 15)) < 20 &&
+                    Math.abs(py - (playerY + 15)) < 20
+                ) {
+                    // Collect particle
+                    particle.remove();
+                    particles.splice(index, 1);
+                    collectedParticles++;
+                    document.getElementById('particle-count').textContent = collectedParticles;
+                    
+                    // Energy boost
+                    playerEnergy = Math.min(100, playerEnergy + 10);
+                    document.getElementById('energy-fill').style.width = `${playerEnergy}%`;
+                    
+                    // Visual effect
+                    const energyFill = document.getElementById('energy-fill');
+                    energyFill.style.background = 'linear-gradient(90deg, var(--quantum-pink), var(--quantum-blue))';
+                    setTimeout(() => {
+                        energyFill.style.background = 'linear-gradient(90deg, var(--quantum-blue), var(--quantum-purple))';
+                    }, 300);
+                    
+                    // Create new particle
+                    setTimeout(() => {
+                        createParticle(
+                            Math.random() * window.innerWidth,
+                            Math.random() * window.innerHeight
+                        );
+                    }, 1000);
+                }
+            });
+            
+            // Energy regeneration
+            if (playerEnergy < 100) {
+                playerEnergy = Math.min(100, playerEnergy + 0.05);
+                document.getElementById('energy-fill').style.width = `${playerEnergy}%`;
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const canvas = document.getElementById('demo-canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Demo chat functionality
+        document.getElementById('chat-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && this.value.trim()) {
+                const message = this.value.trim();
+                this.value = '';
+                
+                const messageElement = document.createElement('div');
+                messageElement.innerHTML = `<strong style="color: var(--quantum-blue)">${playerName}:</strong> ${message}`;
+                document.getElementById('chat-messages').appendChild(messageElement);
+                document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
